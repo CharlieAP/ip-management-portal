@@ -7,6 +7,10 @@ yarn-error.log*
 package-lock.json
 pnpm-lock.yaml
 
+# Angular
+.angular/
+frontend/dist/
+
 # .NET
 bin/
 obj/
@@ -19,6 +23,12 @@ obj/
 local.settings.json
 **/local.settings.json
 .env
+
+# Azurite local storage emulator
+__azurite_db_*.json
+__blobstorage__/
+__queuestorage__/
+AzuriteConfig
 
 # VS Code
 .vscode/
