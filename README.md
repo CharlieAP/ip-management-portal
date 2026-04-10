@@ -30,3 +30,16 @@ A thin vertical slice web portal for IP management with mocked authentication, b
 
 - Authentication is prepared for Azure AD / Easy Auth and can be extended to Azure AD B2C.
 - The API uses Cosmos DB collections for staff, clients, and IP assets (Trade marks and patents).
+- For ease while testing I have been using a `settings.json` for environment variables such as DB connections. You should add one in too, for example my `local.settings.json` looks like this:
+  `{
+	"IsEncrypted": false,
+	"Values": {
+		"AzureWebJobsStorage": "UseDevelopmentStorage=true",
+		"FUNCTIONS_WORKER_RUNTIME": "dotnet-isolated",
+		"COSMOS_DB_CONNECTION_STRING": "AccountEndpoint=<YOUR_ENDPOINT_STRING>;AccountKey=<YOUR_ACCOUNT_KEY>;",
+		"COSMOS_DB_ACCOUNT_NAME": "<YOUR_DB_ACCOUNT_NAME>",
+		"COSMOS_DB_DATABASE_NAME": "<YOUR_DB_NAME>",
+		"AUTHENTICATION_ENABLED": "false"
+	}
+}`
+- If in production I would have these stored in the Azure key vault
