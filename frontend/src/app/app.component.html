@@ -1,0 +1,12 @@
+<div class="app-shell">
+	<h1>IP Management Portal</h1>
+	<div *ngIf="auth.isLoggedIn(); else loginLink">
+		<p>Welcome, {{ auth.userEmail }}</p>
+		<button (click)="auth.logout()">Logout</button>
+	</div>
+	<ng-template #loginLink>
+		<p>Please login to manage IPs.</p>
+	</ng-template>
+
+	<router-outlet></router-outlet>
+</div>

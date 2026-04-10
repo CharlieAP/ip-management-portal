@@ -1,0 +1,21 @@
+form {
+  display: grid;
+  gap: 12px;
+  max-width: 500px;
+}
+
+section {
+  margin-bottom: 24px;
+}
+
+.error {
+  padding: 12px;
+  border: 1px solid #d9534f;
+  color: #a94442;
+  background: #f2dede;
+  margin-bottom: 16px;
+}
+
+table button {
+  margin-right: 8px;
+}

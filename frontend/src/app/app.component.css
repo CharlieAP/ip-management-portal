@@ -1,0 +1,10 @@
+.app-shell {
+  background: white;
+  padding: 24px;
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+}
+
+button {
+  margin-top: 12px;
+}

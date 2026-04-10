@@ -1,0 +1,20 @@
+<div>
+	<h2>Staff Login</h2>
+	<form [formGroup]="form" (ngSubmit)="submit()">
+		<label for="email">Email</label>
+		<input id="email" formControlName="email" placeholder="staff@example.com" />
+		<div *ngIf="form.controls.email.invalid && form.controls.email.touched">
+			<small *ngIf="form.controls.email.errors?.required"
+				>Email is required.</small
+			>
+			<small *ngIf="form.controls.email.errors?.email"
+				>Enter a valid email.</small
+			>
+		</div>
+		<button type="submit" [disabled]="form.invalid">Login</button>
+	</form>
+	<p>
+		Use a staff email such as <strong>staff&#64;example.com</strong>. The API
+		will map staff access by email.
+	</p>
+</div>

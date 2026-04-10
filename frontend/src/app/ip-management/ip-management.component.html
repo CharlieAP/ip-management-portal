@@ -1,0 +1,83 @@
+<div>
+	<h2>IP Management</h2>
+
+	<div *ngIf="errorMessage" class="error">{{ errorMessage }}</div>
+
+	<section>
+		<h3>{{ editing ? "Edit IP" : "Add IP" }}</h3>
+		<form [formGroup]="form" (ngSubmit)="submit()">
+			<label for="internalReference">Internal Reference</label>
+			<input
+				id="internalReference"
+				formControlName="internalReference"
+				placeholder="e.g. ip-123"
+				[attr.readonly]="editing ? true : null"
+			/>
+
+			<label for="clientId">Client</label>
+			<select id="clientId" formControlName="clientId">
+				<option value="">Select a client</option>
+				<option *ngFor="let client of clients" [value]="client.Id">
+					{{ client.Name }}
+				</option>
+			</select>
+
+			<label for="title">Title</label>
+			<input
+				id="title"
+				formControlName="title"
+				placeholder="Patent or trade mark title"
+			/>
+
+			<label for="description">Description</label>
+			<textarea
+				id="description"
+				formControlName="description"
+				rows="2"
+			></textarea>
+
+			<label for="type">Type</label>
+			<select id="type" formControlName="type">
+				<option value="Unknown">Unknown</option>
+				<option value="Patent">Patent</option>
+				<option value="TradeMark">Trade Mark</option>
+			</select>
+
+			<button type="submit">{{ editing ? "Save" : "Create" }}</button>
+			<button type="button" (click)="clearForm()">Clear</button>
+		</form>
+	</section>
+
+	<section>
+		<h3>Your IP Entries</h3>
+		<table *ngIf="ipEntries.length; else emptyState">
+			<thead>
+				<tr>
+					<th>Internal Reference</th>
+					<th>Title</th>
+					<th>Client</th>
+					<th>Type</th>
+					<th>Description</th>
+					<th>Actions</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr *ngFor="let entry of ipEntries">
+					<td>{{ entry.InternalReference }}</td>
+					<td>{{ entry.Title }}</td>
+					<td>{{ getClientName(entry.ClientId) }}</td>
+					<td>{{ getIpType(entry.Type) }}</td>
+					<td>{{ entry.Description }}</td>
+					<td>
+						<button (click)="edit(entry)">Edit</button>
+						<button (click)="delete(entry)">Delete</button>
+					</td>
+				</tr>
+			</tbody>
+		</table>
+
+		<ng-template #emptyState>
+			<p>No IP entries found for your clients.</p>
+		</ng-template>
+	</section>
+</div>

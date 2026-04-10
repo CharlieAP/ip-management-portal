@@ -1,0 +1,35 @@
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  background: #f3f5f8;
+}
+
+.app-shell {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+button {
+  cursor: pointer;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 16px;
+}
+
+table th,
+table td {
+  padding: 10px;
+  border: 1px solid #ddd;
+}
+
+input, select, textarea {
+  width: 100%;
+  padding: 8px;
+  margin: 4px 0 12px;
+  box-sizing: border-box;
+}
