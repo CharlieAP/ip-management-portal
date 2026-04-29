@@ -71,7 +71,7 @@ export class IpManagementComponent implements OnInit {
 		});
 	}
 
-	delete(entry: IpEntry): void {
+	onDelete(entry: IpEntry): void {
 		this.ipService.deleteIpEntry(entry.InternalReference).subscribe({
 			next: () => this.loadData(),
 			error: () => (this.errorMessage = "Unable to delete IP entry."),
