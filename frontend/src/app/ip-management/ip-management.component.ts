@@ -1,5 +1,4 @@
 import { Component, OnInit } from "@angular/core";
-import { FormBuilder, Validators } from "@angular/forms";
 import { IpService } from "../ip.service";
 import { Client, IpEntry } from "../ip.model";
 
@@ -11,23 +10,14 @@ import { Client, IpEntry } from "../ip.model";
 export class IpManagementComponent implements OnInit {
 	clients: Client[] = [];
 	ipEntries: IpEntry[] = [];
+
 	editing: IpEntry | null = null;
+
 	errorMessage = "";
+	formErrorMessage = "";
+	busy = false;
 
-	form;
-
-	constructor(
-		private fb: FormBuilder,
-		private ipService: IpService,
-	) {
-		this.form = this.fb.group({
-			internalReference: ["", Validators.required],
-			clientId: ["", Validators.required],
-			title: ["", Validators.required],
-			type: ["", Validators.required],
-			description: [""],
-		});
-	}
+	constructor(private ipService: IpService) {}
 
 	ngOnInit(): void {
 		this.loadData();
@@ -49,45 +39,36 @@ export class IpManagementComponent implements OnInit {
 		});
 	}
 
-	submit(): void {
-		if (this.form.invalid) {
-			return;
-		}
-		const payload: IpEntry = {
-			InternalReference:
-				this.editing?.InternalReference ??
-				this.form.value.internalReference ??
-				"",
-			ClientId: this.form.value.clientId ?? "",
-			Title: this.form.value.title ?? "",
-			Type: (this.form.value.type ?? "Unknown") as IpEntry["Type"],
-			Description: this.form.value.description ?? "",
-			CreatedAt: this.editing?.CreatedAt ?? new Date().toISOString(),
-		};
+	onEdit(entry: IpEntry): void {
+		this.editing = entry;
+		this.formErrorMessage = "";
+	}
 
-		const request = this.editing
+	onCancelEdit(): void {
+		this.editing = null;
+		this.formErrorMessage = "";
+	}
+
+	onSave(payload: IpEntry): void {
+		this.busy = true;
+		this.formErrorMessage = "";
+
+		const req = this.editing
 			? this.ipService.updateIpEntry(payload)
 			: this.ipService.createIpEntry(payload);
 
-		request.subscribe({
+		req.subscribe({
 			next: () => {
-				this.clearForm();
+				this.busy = false;
+				this.editing = null;
 				this.loadData();
 			},
-			error: () => (this.errorMessage = "Unable to save IP entry."),
+			error: (err) => {
+				this.busy = false;
+				this.formErrorMessage =
+					"Unable to save IP entry. " + (err.message || "");
+			},
 		});
-	}
-
-	edit(entry: IpEntry): void {
-		this.editing = entry;
-		this.form.patchValue({
-			internalReference: entry.InternalReference,
-			clientId: entry.ClientId,
-			title: entry.Title,
-			type: entry.Type,
-			description: entry.Description,
-		});
-		this.form.get("internalReference")?.disable();
 	}
 
 	delete(entry: IpEntry): void {
@@ -99,8 +80,6 @@ export class IpManagementComponent implements OnInit {
 
 	getClientName(clientId: string): string {
 		// TODO: this is running on every change detection cycle and should be optimised
-		const c =
-			this.clients.find((c) => c.Id.trim() === clientId.trim())?.Name ?? "";
 		return this.clients.find((c) => c.Id === clientId)?.Name ?? "";
 	}
 
@@ -113,11 +92,5 @@ export class IpManagementComponent implements OnInit {
 			default:
 				return type ?? "";
 		}
-	}
-
-	clearForm(): void {
-		this.editing = null;
-		this.form.get("internalReference")?.enable();
-		this.form.reset({ type: "" });
 	}
 }
