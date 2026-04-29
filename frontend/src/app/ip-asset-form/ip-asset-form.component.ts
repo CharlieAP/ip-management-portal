@@ -131,6 +131,6 @@ export class IpAssetFormComponent implements OnChanges {
 	}
 
 	onCancel(): void {
-		this.cancel.emit;
+		this.cancel.emit();
 	}
 }
