@@ -1,9 +1,13 @@
 import { Component, OnInit } from "@angular/core";
+import { CommonModule } from "@angular/common";
 import { IpService } from "../ip.service";
 import { Client, IpEntry } from "../ip.model";
+import { IpAssetFormComponent } from "../ip-asset-form/ip-asset-form.component";
 
 @Component({
 	selector: "app-ip-management",
+	standalone: true,
+	imports: [CommonModule, IpAssetFormComponent],
 	templateUrl: "./ip-management.component.html",
 	styleUrls: ["./ip-management.component.css"],
 })

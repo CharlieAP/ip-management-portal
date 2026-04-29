@@ -7,7 +7,9 @@ import {
 	Output,
 	SimpleChanges,
 } from "@angular/core";
+import { CommonModule } from "@angular/common";
 import { FormBuilder, Validators } from "@angular/forms";
+import { ReactiveFormsModule } from "@angular/forms";
 import { Client, IpEntry } from "../ip.model";
 
 export type IpAssetFormMode = "create" | "update";
@@ -17,6 +19,8 @@ export type IpAssetFormMode = "create" | "update";
 
 @Component({
 	selector: "app-ip-asset-form",
+	standalone: true,
+	imports: [CommonModule, ReactiveFormsModule],
 	templateUrl: "./ip-asset-form.component.html",
 	styleUrls: ["./ip-asset-form.component.css"],
 	changeDetection: ChangeDetectionStrategy.OnPush,
