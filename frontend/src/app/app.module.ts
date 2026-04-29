@@ -6,7 +6,7 @@ import { AppRoutingModule } from "./app-routing.module";
 import { AppComponent } from "./app.component";
 import { LoginComponent } from "./login/login.component";
 import { IpManagementComponent } from "./ip-management/ip-management.component";
-import { IpAssetFormComponent } from "./ip-asset-form-component/ip-asset-form-component.component";
+import { IpAssetFormComponent } from "./ip-asset-form/ip-asset-form.component";
 
 @NgModule({
 	declarations: [

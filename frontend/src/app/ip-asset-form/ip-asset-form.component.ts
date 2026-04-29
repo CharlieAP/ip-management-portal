@@ -17,10 +17,11 @@ export type IpAssetFormMode = "create" | "update";
 
 @Component({
 	selector: "app-ip-asset-form",
-	templateUrl: "./ip-asset-form-component.component.html",
-	styleUrls: ["./ip-asset-form-component.component.css"],
+	templateUrl: "./ip-asset-form.component.html",
+	styleUrls: ["./ip-asset-form.component.css"],
 	changeDetection: ChangeDetectionStrategy.OnPush,
-}) // TODO understand on changes
+})
+// implements OnChanges to reset form values when switching between editing diff IP entries or create/edit mode.
 export class IpAssetFormComponent implements OnChanges {
 	@Input({ required: true }) clients: Client[] = [];
 	// if there is an IP entry passed, assume edit mode. Else, assume create mode.
