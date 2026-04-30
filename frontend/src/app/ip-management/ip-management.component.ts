@@ -3,6 +3,10 @@ import { CommonModule } from "@angular/common";
 import { IpService } from "../ip.service";
 import { Client, IpEntry } from "../ip.model";
 import { IpAssetFormComponent } from "../ip-asset-form/ip-asset-form.component";
+import {
+	ClientOption,
+	IpAssetFormValue,
+} from "../ip-asset-form/ip-asset-form.component";
 
 @Component({
 	selector: "app-ip-management",
@@ -15,7 +19,10 @@ export class IpManagementComponent implements OnInit {
 	clients: Client[] = [];
 	ipEntries: IpEntry[] = [];
 
-	editing: IpEntry | null = null;
+	editing: IpAssetFormValue | null = null;
+
+	// private reference to the full IpEntry to preserve fields the form doesnt know about like CreatedAt and to determine what 'mode' the form is in
+	private editingEntry: IpEntry | null = null;
 
 	errorMessage = "";
 	formErrorMessage = "";
@@ -43,21 +50,44 @@ export class IpManagementComponent implements OnInit {
 		});
 	}
 
+	// map API client model to form model
+	get clientOptions(): ClientOption[] {
+		return this.clients.map((c) => ({ id: c.Id, label: c.Name }));
+	}
+
 	onEdit(entry: IpEntry): void {
-		this.editing = entry;
+		this.editingEntry = entry;
+		this.editing = {
+			internalReference: entry.InternalReference,
+			clientId: entry.ClientId,
+			title: entry.Title,
+			type: entry.Type,
+			description: entry.Description,
+		};
 		this.formErrorMessage = "";
 	}
 
 	onCancelEdit(): void {
 		this.editing = null;
+		this.editingEntry = null;
 		this.formErrorMessage = "";
 	}
 
-	onSave(payload: IpEntry): void {
+	onSave(formValue: IpAssetFormValue): void {
 		this.busy = true;
 		this.formErrorMessage = "";
 
-		const req = this.editing
+		// map the form data back into the API model shape
+		const payload: IpEntry = {
+			InternalReference: formValue.internalReference,
+			ClientId: formValue.clientId,
+			Title: formValue.title,
+			Type: formValue.type,
+			Description: formValue.description,
+			CreatedAt: this.editingEntry?.CreatedAt ?? new Date().toISOString(),
+		};
+
+		const req = this.editingEntry
 			? this.ipService.updateIpEntry(payload)
 			: this.ipService.createIpEntry(payload);
 
@@ -65,6 +95,7 @@ export class IpManagementComponent implements OnInit {
 			next: () => {
 				this.busy = false;
 				this.editing = null;
+				this.editingEntry = null;
 				this.loadData();
 			},
 			error: (err) => {
