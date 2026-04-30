@@ -17,8 +17,8 @@ export class SharedStateService {
 	constructor(private ipService: IpService) {}
 
 	loadClients(): void {
-		if (!this.clientsSubject.value) {
-			// prevents API call if there is already data
+		if (this.clientsSubject.value.length === 0) {
+			// only load if there are no clients loaded
 			this.ipService.getClients().subscribe({
 				next: (clients: Client[]) => this.clientsSubject.next(clients),
 				error: (err) =>
@@ -28,7 +28,7 @@ export class SharedStateService {
 	}
 
 	loadIpAssets(): void {
-		if (!this.ipAssetsSubject.value) {
+		if (this.ipAssetsSubject.value.length === 0) {
 			this.ipService.getIpEntries().subscribe({
 				next: (ips: IpEntry[]) => this.ipAssetsSubject.next(ips),
 				error: (err) =>
