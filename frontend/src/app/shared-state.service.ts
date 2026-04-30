@@ -17,6 +17,7 @@ export class SharedStateService {
 
 	constructor(private ipService: IpService) {}
 
+	// TODO: swap to a reload pattern like IP assets do if a feature was added to create/update/delete clients
 	loadClients(): Observable<Client[]> {
 		if (this.clientsSubject.value.length === 0) {
 			// only load if there are no clients loaded
@@ -34,14 +35,10 @@ export class SharedStateService {
 
 	loadIpAssets(): Observable<IpEntry[]> {
 		if (this.ipAssetsSubject.value.length === 0) {
-			return this.reloadIpAssetsObservable();
+			return this.reloadIpAssets();
 		}
 
 		return of(this.ipAssetsSubject.value);
-	}
-
-	reloadIpAssets(): Observable<IpEntry[]> {
-		return this.reloadIpAssetsObservable();
 	}
 
 	createIpAsset(entry: IpEntry): Observable<void> {
@@ -53,14 +50,14 @@ export class SharedStateService {
 				);
 				return savedEntry;
 			}),
-			concatMap(() => this.reloadIpAssetsObservable()),
+			concatMap(() => this.reloadIpAssets()),
 			map(() => undefined),
 		);
 	}
 
 	updateIpAsset(entry: IpEntry): Observable<void> {
 		return this.ipService.updateIpEntry(entry).pipe(
-			concatMap(() => this.reloadIpAssetsObservable()),
+			concatMap(() => this.reloadIpAssets()),
 			map(() => undefined),
 		);
 	}
@@ -71,13 +68,13 @@ export class SharedStateService {
 				console.log("Deleted IP entry with reference: " + internalReference);
 				return internalReference;
 			}),
-			concatMap(() => this.reloadIpAssetsObservable()),
+			concatMap(() => this.reloadIpAssets()),
 			map(() => undefined), // makes return type Observable<void>
 		);
 	}
 
-	private reloadIpAssetsObservable(): Observable<IpEntry[]> {
-		// utility method to refresh IP assets after create/update
+	private reloadIpAssets(): Observable<IpEntry[]> {
+		// utility method to refresh IP assets after create/update/delete
 		// returns an observable
 		return this.ipService.getIpEntries().pipe(
 			map((ips: IpEntry[]) => {
