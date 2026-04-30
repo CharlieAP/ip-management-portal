@@ -22,6 +22,7 @@ export class SharedStateService {
 			this.ipService.getClients().subscribe({
 				next: (clients: Client[]) => this.clientsSubject.next(clients),
 				error: (err) =>
+					// todo: return a user friendly error message to the component
 					console.error("Unable to load clients. " + (err.message || "")),
 			});
 		}
@@ -35,5 +36,52 @@ export class SharedStateService {
 					console.error("Unable to load IP entries. " + (err.message || "")),
 			});
 		}
+	}
+
+	reloadIpAssets(): void {
+		// utility method to refresh IP assets after create/update/delete operations
+		this.ipService.getIpEntries().subscribe({
+			next: (ips: IpEntry[]) => {
+				this.ipAssetsSubject.next(ips);
+			},
+			error: (err) =>
+				console.error("Unable to load IP entries. " + (err.message || "")),
+		});
+	}
+
+	createIpAsset(entry: IpEntry): void {
+		this.ipService.createIpEntry(entry).subscribe({
+			next: (savedEntry) => {
+				this.reloadIpAssets();
+				console.log(
+					"Created IP entry with references: ",
+					savedEntry.InternalReference,
+				);
+			},
+			error: () => console.error("Unable to create IP entry."),
+		});
+	}
+
+	updateIpAsset(entry: IpEntry): void {
+		this.ipService.updateIpEntry(entry).subscribe({
+			next: () => {
+				this.reloadIpAssets();
+			},
+			error: () =>
+				console.error(
+					"Unable to update IP asset with internal reference: ",
+					entry.InternalReference,
+				),
+		});
+	}
+
+	deleteIpAsset(internalReference: string): void {
+		this.ipService.deleteIpEntry(internalReference).subscribe({
+			next: () => {
+				this.reloadIpAssets();
+				console.log("Deleted IP entry with reference: " + internalReference);
+			},
+			error: () => console.error("Unable to delete IP entry."),
+		});
 	}
 }

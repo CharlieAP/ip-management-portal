@@ -98,8 +98,8 @@ export class IpManagementComponent implements OnInit {
 		};
 
 		const req = this.editingEntry
-			? this.ipService.updateIpEntry(payload)
-			: this.ipService.createIpEntry(payload);
+			? this.sharedStateService.updateIpAsset(payload)
+			: this.sharedStateService.createIpAsset(payload);
 
 		req.subscribe({
 			next: () => {
