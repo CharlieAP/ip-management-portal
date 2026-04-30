@@ -37,19 +37,26 @@ export class IpManagementComponent implements OnInit {
 		this.loadData();
 	}
 
-	loadData(): void {
+	loadData() {
+		this.initClients();
+		this.initIpEntries();
+	}
+
+	initClients() {
 		this.sharedStateService.loadClients();
 		this.sharedStateService.clients$.subscribe({
 			next: (clients) => {
 				this.clients = clients;
 			},
 		});
+	}
 
-		this.ipService.getIpEntries().subscribe({
-			next: (ips: IpEntry[]) => (this.ipEntries = ips),
-			error: (err: any) =>
-				(this.errorMessage =
-					"Unable to load IP entries. " + (err.message || "")),
+	initIpEntries() {
+		this.sharedStateService.loadIpAssets();
+		this.sharedStateService.ipAssets$.subscribe({
+			next: (ips) => {
+				this.ipEntries = ips;
+			},
 		});
 	}
 
