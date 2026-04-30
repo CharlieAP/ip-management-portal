@@ -1,4 +1,4 @@
-import { Component, OnInit } from "@angular/core";
+import { Component, inject, OnInit } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { IpService } from "../ip.service";
 import { Client, IpEntry } from "../ip.model";
@@ -7,6 +7,7 @@ import {
 	ClientOption,
 	IpAssetFormValue,
 } from "../ip-asset-form/ip-asset-form.component";
+import { SharedStateService } from "../shared-state.service";
 
 @Component({
 	selector: "app-ip-management",
@@ -16,6 +17,8 @@ import {
 	styleUrls: ["./ip-management.component.css"],
 })
 export class IpManagementComponent implements OnInit {
+	private sharedStateService = inject(SharedStateService);
+
 	clients: Client[] = [];
 	ipEntries: IpEntry[] = [];
 
@@ -35,10 +38,11 @@ export class IpManagementComponent implements OnInit {
 	}
 
 	loadData(): void {
-		this.ipService.getClients().subscribe({
-			next: (clients: Client[]) => (this.clients = clients),
-			error: (err) =>
-				(this.errorMessage = "Unable to load clients. " + (err.message || "")),
+		this.sharedStateService.loadClients();
+		this.sharedStateService.clients$.subscribe({
+			next: (clients) => {
+				this.clients = clients;
+			},
 		});
 
 		this.ipService.getIpEntries().subscribe({
