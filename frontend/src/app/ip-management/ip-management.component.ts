@@ -38,8 +38,7 @@ export class IpManagementComponent implements OnInit {
 		this.ipService.getClients().subscribe({
 			next: (clients: Client[]) => (this.clients = clients),
 			error: (err) =>
-				(this.errorMessage =
-					"Unable to load IP entries. " + (err.message || "")),
+				(this.errorMessage = "Unable to load clients. " + (err.message || "")),
 		});
 
 		this.ipService.getIpEntries().subscribe({
