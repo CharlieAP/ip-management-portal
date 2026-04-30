@@ -1,6 +1,6 @@
 import { Component, inject, OnInit } from "@angular/core";
 import { CommonModule } from "@angular/common";
-import { IpService } from "../ip.service";
+import { finalize } from "rxjs";
 import { Client, IpEntry } from "../ip.model";
 import { IpAssetFormComponent } from "../ip-asset-form/ip-asset-form.component";
 import {
@@ -31,7 +31,7 @@ export class IpManagementComponent implements OnInit {
 	formErrorMessage = "";
 	busy = false;
 
-	constructor(private ipService: IpService) {}
+	constructor() {}
 
 	ngOnInit(): void {
 		this.loadData();
@@ -43,7 +43,12 @@ export class IpManagementComponent implements OnInit {
 	}
 
 	initClients() {
-		this.sharedStateService.loadClients();
+		this.sharedStateService.loadClients().subscribe({
+			error: (err) => {
+				this.errorMessage = "Unable to load clients. " + this.getErrorText(err);
+			},
+		});
+
 		this.sharedStateService.clients$.subscribe({
 			next: (clients) => {
 				this.clients = clients;
@@ -52,7 +57,13 @@ export class IpManagementComponent implements OnInit {
 	}
 
 	initIpEntries() {
-		this.sharedStateService.loadIpAssets();
+		this.sharedStateService.loadIpAssets().subscribe({
+			error: (err) => {
+				this.errorMessage =
+					"Unable to load IP entries. " + this.getErrorText(err);
+			},
+		});
+
 		this.sharedStateService.ipAssets$.subscribe({
 			next: (ips) => {
 				this.ipEntries = ips;
@@ -101,26 +112,51 @@ export class IpManagementComponent implements OnInit {
 			? this.sharedStateService.updateIpAsset(payload)
 			: this.sharedStateService.createIpAsset(payload);
 
-		req.subscribe({
+		// when request has finished, make not busy to free up the form
+		// on success reset form, on error show error message
+		req.pipe(finalize(() => (this.busy = false))).subscribe({
 			next: () => {
-				this.busy = false;
 				this.editing = null;
 				this.editingEntry = null;
-				this.loadData();
 			},
 			error: (err) => {
-				this.busy = false;
 				this.formErrorMessage =
-					"Unable to save IP entry. " + (err.message || "");
+					"Unable to save IP entry. " + this.getErrorText(err);
 			},
 		});
 	}
 
 	onDelete(entry: IpEntry): void {
-		this.ipService.deleteIpEntry(entry.InternalReference).subscribe({
-			next: () => this.loadData(),
-			error: () => (this.errorMessage = "Unable to delete IP entry."),
+		this.errorMessage = "";
+		this.sharedStateService.deleteIpAsset(entry.InternalReference).subscribe({
+			error: (err) => {
+				this.errorMessage =
+					"Unable to delete IP entry. " + this.getErrorText(err);
+			},
 		});
+	}
+
+	private getErrorText(err: unknown): string {
+		// try to extract error message from error response
+		if (
+			typeof err === "object" &&
+			err !== null &&
+			"error" in err &&
+			typeof (err as { error?: unknown }).error === "string"
+		) {
+			return (err as { error: string }).error;
+		}
+
+		if (
+			typeof err === "object" &&
+			err !== null &&
+			"message" in err &&
+			typeof (err as { message?: unknown }).message === "string"
+		) {
+			return (err as { message: string }).message;
+		}
+
+		return "Please try again.";
 	}
 
 	getClientName(clientId: string): string {

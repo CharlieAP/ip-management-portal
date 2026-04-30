@@ -3,6 +3,7 @@
 
 import { Injectable } from "@angular/core";
 import { BehaviorSubject } from "rxjs";
+import { Observable, concatMap, map, of } from "rxjs";
 import { Client, IpEntry } from "./ip.model";
 import { IpService } from "./ip.service";
 
@@ -16,72 +17,73 @@ export class SharedStateService {
 
 	constructor(private ipService: IpService) {}
 
-	loadClients(): void {
+	loadClients(): Observable<Client[]> {
 		if (this.clientsSubject.value.length === 0) {
 			// only load if there are no clients loaded
-			this.ipService.getClients().subscribe({
-				next: (clients: Client[]) => this.clientsSubject.next(clients),
-				error: (err) =>
-					// todo: return a user friendly error message to the component
-					console.error("Unable to load clients. " + (err.message || "")),
-			});
+			return this.ipService.getClients().pipe(
+				map((clients: Client[]) => {
+					this.clientsSubject.next(clients);
+					return clients;
+				}),
+			);
 		}
+
+		// return clients as an observable if already loaded
+		return of(this.clientsSubject.value);
 	}
 
-	loadIpAssets(): void {
+	loadIpAssets(): Observable<IpEntry[]> {
 		if (this.ipAssetsSubject.value.length === 0) {
-			this.ipService.getIpEntries().subscribe({
-				next: (ips: IpEntry[]) => this.ipAssetsSubject.next(ips),
-				error: (err) =>
-					console.error("Unable to load IP entries. " + (err.message || "")),
-			});
+			return this.reloadIpAssetsObservable();
 		}
+
+		return of(this.ipAssetsSubject.value);
 	}
 
-	reloadIpAssets(): void {
-		// utility method to refresh IP assets after create/update/delete operations
-		this.ipService.getIpEntries().subscribe({
-			next: (ips: IpEntry[]) => {
-				this.ipAssetsSubject.next(ips);
-			},
-			error: (err) =>
-				console.error("Unable to load IP entries. " + (err.message || "")),
-		});
+	reloadIpAssets(): Observable<IpEntry[]> {
+		return this.reloadIpAssetsObservable();
 	}
 
-	createIpAsset(entry: IpEntry): void {
-		this.ipService.createIpEntry(entry).subscribe({
-			next: (savedEntry) => {
-				this.reloadIpAssets();
+	createIpAsset(entry: IpEntry): Observable<void> {
+		return this.ipService.createIpEntry(entry).pipe(
+			map((savedEntry) => {
 				console.log(
 					"Created IP entry with references: ",
 					savedEntry.InternalReference,
 				);
-			},
-			error: () => console.error("Unable to create IP entry."),
-		});
+				return savedEntry;
+			}),
+			concatMap(() => this.reloadIpAssetsObservable()),
+			map(() => undefined),
+		);
 	}
 
-	updateIpAsset(entry: IpEntry): void {
-		this.ipService.updateIpEntry(entry).subscribe({
-			next: () => {
-				this.reloadIpAssets();
-			},
-			error: () =>
-				console.error(
-					"Unable to update IP asset with internal reference: ",
-					entry.InternalReference,
-				),
-		});
+	updateIpAsset(entry: IpEntry): Observable<void> {
+		return this.ipService.updateIpEntry(entry).pipe(
+			concatMap(() => this.reloadIpAssetsObservable()),
+			map(() => undefined),
+		);
 	}
 
-	deleteIpAsset(internalReference: string): void {
-		this.ipService.deleteIpEntry(internalReference).subscribe({
-			next: () => {
-				this.reloadIpAssets();
+	deleteIpAsset(internalReference: string): Observable<void> {
+		return this.ipService.deleteIpEntry(internalReference).pipe(
+			map(() => {
 				console.log("Deleted IP entry with reference: " + internalReference);
-			},
-			error: () => console.error("Unable to delete IP entry."),
-		});
+				return internalReference;
+			}),
+			concatMap(() => this.reloadIpAssetsObservable()),
+			map(() => undefined), // makes return type Observable<void>
+		);
+	}
+
+	private reloadIpAssetsObservable(): Observable<IpEntry[]> {
+		// utility method to refresh IP assets after create/update
+		// returns an observable
+		return this.ipService.getIpEntries().pipe(
+			map((ips: IpEntry[]) => {
+				this.ipAssetsSubject.next(ips);
+				return ips;
+			}),
+		);
 	}
 }
