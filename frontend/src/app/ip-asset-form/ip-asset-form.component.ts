@@ -10,9 +10,24 @@ import {
 import { CommonModule } from "@angular/common";
 import { FormBuilder, Validators } from "@angular/forms";
 import { ReactiveFormsModule } from "@angular/forms";
-import { Client, IpEntry } from "../ip.model";
 
 export type IpAssetFormMode = "create" | "update";
+
+// Create types for this component to own; decoupling it from API model
+export type IpAssetFormType = "Unknown" | "Patent" | "TradeMark";
+
+export interface IpAssetFormValue {
+	internalReference: string;
+	clientId: string;
+	title: string;
+	type: IpAssetFormType;
+	description: string;
+}
+
+export interface ClientOption {
+	id: string;
+	label: string;
+}
 
 // A component to encapsulate the form in the IP management page.
 // Used for both creating and editing IP assets
@@ -27,13 +42,13 @@ export type IpAssetFormMode = "create" | "update";
 })
 // implements OnChanges to reset form values when switching between editing diff IP entries or create/edit mode.
 export class IpAssetFormComponent implements OnChanges {
-	@Input({ required: true }) clients: Client[] = [];
-	// if there is an IP entry passed, assume edit mode. Else, assume create mode.
-	@Input() initialValue: IpEntry | null = null;
+	@Input({ required: true }) clients: ClientOption[] = [];
+	// if there is a value passed, assume edit mode. Else, assume create mode.
+	@Input() initialValue: IpAssetFormValue | null = null;
 	@Input() busy = false;
 	@Input() errorMessage = "";
 
-	@Output() save = new EventEmitter<IpEntry>();
+	@Output() save = new EventEmitter<IpAssetFormValue>();
 	@Output() cancel = new EventEmitter<void>();
 
 	form;
@@ -71,11 +86,11 @@ export class IpAssetFormComponent implements OnChanges {
 				// pre-populate inputs with existing values from initialValue
 				this.form.reset(
 					{
-						internalReference: v.InternalReference ?? "",
-						clientId: v.ClientId ?? "",
-						title: v.Title ?? "",
-						type: v.Type ?? "Unknown",
-						description: v.Description ?? "",
+						internalReference: v.internalReference ?? "",
+						clientId: v.clientId ?? "",
+						title: v.title ?? "",
+						type: v.type ?? "Unknown",
+						description: v.description ?? "",
 					},
 					{
 						emitEvent: false,
@@ -115,16 +130,12 @@ export class IpAssetFormComponent implements OnChanges {
 
 		const rawInputData = this.form.getRawValue(); // allows getting value of disabled controls
 
-		const mappedFormData: IpEntry = {
-			InternalReference:
-				this.initialValue?.InternalReference ??
-				rawInputData.internalReference ??
-				"",
-			ClientId: rawInputData.clientId ?? "",
-			Title: rawInputData.title ?? "",
-			Type: (rawInputData.type ?? "Unknown") as IpEntry["Type"],
-			Description: rawInputData.description ?? "",
-			CreatedAt: this.initialValue?.CreatedAt ?? new Date().toISOString(),
+		const mappedFormData: IpAssetFormValue = {
+			internalReference: rawInputData.internalReference ?? "",
+			clientId: rawInputData.clientId ?? "",
+			title: rawInputData.title ?? "",
+			type: (rawInputData.type ?? "Unknown") as IpAssetFormValue["type"],
+			description: rawInputData.description ?? "",
 		};
 
 		this.save.emit(mappedFormData);

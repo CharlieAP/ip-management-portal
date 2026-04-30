@@ -14,8 +14,8 @@
 		<label for="clientId">Client</label>
 		<select id="clientId" formControlName="clientId">
 			<option value="">Select a client</option>
-			<option *ngFor="let client of clients" [value]="client.Id">
-				{{ client.Name }}
+			<option *ngFor="let client of clients" [value]="client.id">
+				{{ client.label }}
 			</option>
 		</select>
 
