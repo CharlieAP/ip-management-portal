@@ -139,6 +139,17 @@ export class IpAssetFormComponent implements OnChanges {
 		};
 
 		this.save.emit(mappedFormData);
+
+		const resetValues: IpAssetFormValue = {
+			internalReference: "",
+			clientId: "",
+			title: "",
+			type: "Unknown" as IpAssetFormValue["type"],
+			description: "",
+		};
+
+		// reset form to empty values but dont emit valueChanges event to avoid loops
+		this.form.reset(resetValues, { emitEvent: false });
 	}
 
 	onCancel(): void {
