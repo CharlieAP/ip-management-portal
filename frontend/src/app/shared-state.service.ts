@@ -17,18 +17,23 @@ export class SharedStateService {
 	constructor(private ipService: IpService) {}
 
 	loadClients(): void {
-		this.ipService.getClients().subscribe({
-			next: (clients: Client[]) => this.clientsSubject.next(clients),
-			error: (err) =>
-				console.error("Unable to load clients. " + (err.message || "")),
-		});
+		if (!this.clientsSubject.value) {
+			// prevents API call if there is already data
+			this.ipService.getClients().subscribe({
+				next: (clients: Client[]) => this.clientsSubject.next(clients),
+				error: (err) =>
+					console.error("Unable to load clients. " + (err.message || "")),
+			});
+		}
 	}
 
 	loadIpAssets(): void {
-		this.ipService.getIpEntries().subscribe({
-			next: (ips: IpEntry[]) => this.ipAssetsSubject.next(ips),
-			error: (err) =>
-				console.error("Unable to load IP entries. " + (err.message || "")),
-		});
+		if (!this.ipAssetsSubject.value) {
+			this.ipService.getIpEntries().subscribe({
+				next: (ips: IpEntry[]) => this.ipAssetsSubject.next(ips),
+				error: (err) =>
+					console.error("Unable to load IP entries. " + (err.message || "")),
+			});
+		}
 	}
 }
