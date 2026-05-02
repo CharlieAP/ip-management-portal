@@ -1,3 +1,9 @@
+form {
+	display: grid;
+	gap: 12px;
+	max-width: 500px;
+}
+
 section {
 	margin-bottom: 24px;
 }
@@ -8,8 +14,4 @@ section {
 	color: #a94442;
 	background: #f2dede;
 	margin-bottom: 16px;
-}
-
-table button {
-	margin-right: 8px;
 }

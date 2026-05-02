@@ -1,106 +1,166 @@
-import { Component, OnInit } from "@angular/core";
-import { FormBuilder, Validators } from "@angular/forms";
-import { IpService } from "../ip.service";
+import { Component, inject, OnInit } from "@angular/core";
+import { CommonModule } from "@angular/common";
+import { finalize } from "rxjs";
 import { Client, IpEntry } from "../ip.model";
+import { IpAssetFormComponent } from "../ip-asset-form/ip-asset-form.component";
+import {
+	ClientOption,
+	IpAssetFormValue,
+} from "../ip-asset-form/ip-asset-form.component";
+import { SharedStateService } from "../shared-state.service";
 
 @Component({
 	selector: "app-ip-management",
+	standalone: true,
+	imports: [CommonModule, IpAssetFormComponent],
 	templateUrl: "./ip-management.component.html",
 	styleUrls: ["./ip-management.component.css"],
 })
 export class IpManagementComponent implements OnInit {
+	private sharedStateService = inject(SharedStateService);
+
 	clients: Client[] = [];
 	ipEntries: IpEntry[] = [];
-	editing: IpEntry | null = null;
+
+	editing: IpAssetFormValue | null = null;
+
+	// private reference to the full IpEntry to preserve fields the form doesnt know about like CreatedAt and to determine what 'mode' the form is in
+	private editingEntry: IpEntry | null = null;
+
 	errorMessage = "";
+	formErrorMessage = "";
+	busy = false;
 
-	form;
-
-	constructor(
-		private fb: FormBuilder,
-		private ipService: IpService,
-	) {
-		this.form = this.fb.group({
-			internalReference: ["", Validators.required],
-			clientId: ["", Validators.required],
-			title: ["", Validators.required],
-			type: ["", Validators.required],
-			description: [""],
-		});
-	}
+	constructor() {}
 
 	ngOnInit(): void {
 		this.loadData();
 	}
 
-	loadData(): void {
-		this.ipService.getClients().subscribe({
-			next: (clients: Client[]) => (this.clients = clients),
-			error: (err) =>
-				(this.errorMessage =
-					"Unable to load IP entries. " + (err.message || "")),
-		});
-
-		this.ipService.getIpEntries().subscribe({
-			next: (ips: IpEntry[]) => (this.ipEntries = ips),
-			error: (err: any) =>
-				(this.errorMessage =
-					"Unable to load IP entries. " + (err.message || "")),
-		});
+	loadData() {
+		this.initClients();
+		this.initIpEntries();
 	}
 
-	submit(): void {
-		if (this.form.invalid) {
-			return;
-		}
-		const payload: IpEntry = {
-			InternalReference:
-				this.editing?.InternalReference ??
-				this.form.value.internalReference ??
-				"",
-			ClientId: this.form.value.clientId ?? "",
-			Title: this.form.value.title ?? "",
-			Type: (this.form.value.type ?? "Unknown") as IpEntry["Type"],
-			Description: this.form.value.description ?? "",
-			CreatedAt: this.editing?.CreatedAt ?? new Date().toISOString(),
-		};
-
-		const request = this.editing
-			? this.ipService.updateIpEntry(payload)
-			: this.ipService.createIpEntry(payload);
-
-		request.subscribe({
-			next: () => {
-				this.clearForm();
-				this.loadData();
+	initClients() {
+		this.sharedStateService.loadClients().subscribe({
+			error: (err) => {
+				this.errorMessage = "Unable to load clients. " + this.getErrorText(err);
 			},
-			error: () => (this.errorMessage = "Unable to save IP entry."),
+		});
+
+		this.sharedStateService.clients$.subscribe({
+			next: (clients) => {
+				this.clients = clients;
+			},
 		});
 	}
 
-	edit(entry: IpEntry): void {
-		this.editing = entry;
-		this.form.patchValue({
+	initIpEntries() {
+		this.sharedStateService.loadIpAssets().subscribe({
+			error: (err) => {
+				this.errorMessage =
+					"Unable to load IP entries. " + this.getErrorText(err);
+			},
+		});
+
+		this.sharedStateService.ipAssets$.subscribe({
+			next: (ips) => {
+				this.ipEntries = ips;
+			},
+		});
+	}
+
+	// map API client model to form model
+	get clientOptions(): ClientOption[] {
+		return this.clients.map((c) => ({ id: c.Id, label: c.Name }));
+	}
+
+	onEdit(entry: IpEntry): void {
+		this.editingEntry = entry;
+		this.editing = {
 			internalReference: entry.InternalReference,
 			clientId: entry.ClientId,
 			title: entry.Title,
 			type: entry.Type,
 			description: entry.Description,
-		});
-		this.form.get("internalReference")?.disable();
+		};
+		this.formErrorMessage = "";
 	}
 
-	delete(entry: IpEntry): void {
-		this.ipService.deleteIpEntry(entry.InternalReference).subscribe({
-			next: () => this.loadData(),
-			error: () => (this.errorMessage = "Unable to delete IP entry."),
+	onCancelEdit(): void {
+		this.editing = null;
+		this.editingEntry = null;
+		this.formErrorMessage = "";
+	}
+
+	onSave(formValue: IpAssetFormValue): void {
+		this.busy = true;
+		this.formErrorMessage = "";
+
+		// map the form data back into the API model shape
+		const payload: IpEntry = {
+			InternalReference: formValue.internalReference,
+			ClientId: formValue.clientId,
+			Title: formValue.title,
+			Type: formValue.type,
+			Description: formValue.description,
+			CreatedAt: this.editingEntry?.CreatedAt ?? new Date().toISOString(),
+		};
+
+		const req = this.editingEntry
+			? this.sharedStateService.updateIpAsset(payload)
+			: this.sharedStateService.createIpAsset(payload);
+
+		// when request has finished, make not busy to free up the form
+		// on success reset form, on error show error message
+		req.pipe(finalize(() => (this.busy = false))).subscribe({
+			next: () => {
+				this.editing = null;
+				this.editingEntry = null;
+			},
+			error: (err) => {
+				this.formErrorMessage =
+					"Unable to save IP entry. " + this.getErrorText(err);
+			},
 		});
+	}
+
+	onDelete(entry: IpEntry): void {
+		this.errorMessage = "";
+		this.sharedStateService.deleteIpAsset(entry.InternalReference).subscribe({
+			error: (err) => {
+				this.errorMessage =
+					"Unable to delete IP entry. " + this.getErrorText(err);
+			},
+		});
+	}
+
+	private getErrorText(err: unknown): string {
+		// try to extract error message from error response
+		if (
+			typeof err === "object" &&
+			err !== null &&
+			"error" in err &&
+			typeof (err as { error?: unknown }).error === "string"
+		) {
+			return (err as { error: string }).error;
+		}
+
+		if (
+			typeof err === "object" &&
+			err !== null &&
+			"message" in err &&
+			typeof (err as { message?: unknown }).message === "string"
+		) {
+			return (err as { message: string }).message;
+		}
+
+		return "Please try again.";
 	}
 
 	getClientName(clientId: string): string {
 		// TODO: this is running on every change detection cycle and should be optimised
-		const c =
-			this.clients.find((c) => c.Id.trim() === clientId.trim())?.Name ?? "";
 		return this.clients.find((c) => c.Id === clientId)?.Name ?? "";
 	}
 
@@ -113,11 +173,5 @@ export class IpManagementComponent implements OnInit {
 			default:
 				return type ?? "";
 		}
-	}
-
-	clearForm(): void {
-		this.editing = null;
-		this.form.get("internalReference")?.enable();
-		this.form.reset({ type: "" });
 	}
 }
